@@ -57,6 +57,14 @@ label span { display:block; color:var(--soft); font-size:.875em }
 .status.ok,.status.error { border-inline-start:3px solid currentColor; padding-inline-start:.65rem }
 .status.ok { color:oklch(42% .11 150) }
 .status.error { color:oklch(45% .17 28) }
+.report-slot { margin-top:.8rem }
+.plate-report { border-top:1px solid var(--line); padding-top:.7rem }
+.plate-report h4 { margin:0 0 .25rem; font-size:1rem }
+.report-counts { color:var(--soft); font-size:.9em; margin-bottom:.5rem }
+.report-scroll { max-height:18rem; border:1px solid var(--line) }
+.plate-report table { font-size:.86em }
+.plate-report tr.excluded { color:oklch(43% .13 28) }
+.plate-report tr.excluded td:first-child { font-weight:700; border-inline-start:3px solid currentColor }
 .welcome { margin:clamp(1.2rem,8vw,8rem) auto; padding:1rem; max-width:960px; display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 21rem); gap:clamp(1rem,4vw,4rem); align-items:start }
 .welcome .title { border-bottom:4px solid var(--accent); padding-block:1rem }
 .login { display:grid; gap:1rem }

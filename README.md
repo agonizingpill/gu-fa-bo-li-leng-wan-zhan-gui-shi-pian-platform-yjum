@@ -7,7 +7,7 @@
 模拟客户为棠镜玻璃试制组。夹具登记、温区试片、交互项比较、打样委托；夹具有效行程不足拒排且不占机位。
 
 - 弯模与行程 `jigs`，字段为 `spread`（台面跨度 mm）、`max_throw`（最大行程 mm）、`calibrated`（量具在校）。模型约束位于 `backend/domain/jigs_model.py`，规则位于 `jigs_service.py`。
-- 温区试片 `coupons`，字段为 `jig`（弯模）、`heat`（保温温度 °C）、`thick`（片厚 mm）、`target`（目标弯度 mm）、`measured`（冷却弯度 mm）、`locked`（已确认）。模型约束位于 `backend/domain/coupons_model.py`，规则位于 `coupons_service.py`。
+- 温区试片 `coupons`，字段为 `jig`（弯模）、`heat`（保温温度 °C）、`thick`（片厚 mm）、`target`（目标弯度 mm）、`measured`（冷却弯度 mm）、`locked`（已确认）、`plate`（母板号）、`side`（母板分组）、`quarantined`/`exclude_reason`（隔离与排除原因）。见证接口同时登记母板号；复核员可经 `/coupons/merge-plates` 合并两个同板号，异侧号合并后整板退出拟合。模型约束位于 `backend/domain/coupons_model.py`，规则位于 `coupons_service.py`。
 - 预测曲线签注 `profiles`，字段为 `coupon`（基准试片）、`prediction`（拟合弯度 mm）、`mae`（留出 MAE mm）、`curve`（改善说明）、`token`（拟合编号）。模型约束位于 `backend/domain/profiles_model.py`，规则位于 `profiles_service.py`。
 - 试制工位委托 `work_orders`，字段为 `profile`（依据）、`jig`（工位弯模）、`slot`（机位时段）、`quantity`（试片数）、`state`（状态）。模型约束位于 `backend/domain/work_orders_model.py`，规则位于 `work_orders_service.py`。
 
@@ -52,11 +52,11 @@ Compose 运行 Nginx、Python FastAPI、独立 Redis 消费进程、SQL 数据�
 | 业务任务 | FastAPI 路由 | 页面 |
 |---|---|---|
 | 弯模与行程 | `/jigs` /jigs/calibrate | `frontend/src/pages/jigs.js` |
-| 温区试片 | `/coupons` /coupons/record-coupon，/coupons/witness | `frontend/src/pages/coupons.js` |
-| 预测曲线签注 | `/profiles` /profiles/fit-curve，/profiles/sign-profile | `frontend/src/pages/profiles.js` |
+| 温区试片 | `/coupons` /coupons/record-coupon，/coupons/witness，/coupons/merge-plates | `frontend/src/pages/coupons.js` |
+| 预测曲线签注 | `/profiles` /profiles/fit-curve，/profiles/sign-profile，/profiles/plate-report | `frontend/src/pages/profiles.js` |
 | 试制工位委托 | `/work_orders` /work_orders/book-jig，/work_orders/complete | `frontend/src/pages/work_orders.js` |
 
-SQL 实体与约束在 `backend/domain` 下维护。前端使用原生 ES modules。核心算子为 PolynomialFeatures + Lasso。算法按温度排序每四条留出一条；训练拟合二次多项式和标准化。报告使用 mm 和可复现特征系数。
+SQL 实体与约束在 `backend/domain` 下维护。前端使用原生 ES modules。核心算子为 PolynomialFeatures + Lasso。拟合按固化的母板分组快照划分训练与留验：新母板首次见证时按每四组一块入留验，同板新片沿用原侧；缺母板号的旧片隔离，异侧母板号合并后整板排除。报告使用 mm 和可复现特征系数，并在 `/profiles/plate-report?token=...` 或曲线版本中保留当时的母板去向/排除原因。worker 中断后会把 `compute_requests:processing` 中的原任务退回队列，按同一快照续算。
 
 数据为模拟试制记录。工单留在本地数据库供核查。
 
